@@ -2,22 +2,36 @@
 OPENVPN=$1
 PATH="/home/kse/OpenVPN"
 OPENVPNCONFNAME='*.conf'
+PIDFILE="${PATH}/${OPENVPN}/openvpn.pid"
+LOGFILE="${PATH}/${OPENVPN}/openvpn.log"
+OPTIONS="${OPTIONS} --writepid ${PIDFILE}"
 
-OPTIONS=""
-txtgrn='\e[0;32m' # Green
-txtrst='\e[0m'    # Text Reset
-txtred='\e[0;31m' # Red
-txtylw='\e[0;33m' # Yellow
-undred='\e[4;31m' # Red
+green()
+{
+	echo -en "\e[0;32m"
+	echo -en $1
+	echo -en "\e[0m"
+}
+
+yellow()
+{
+	echo -en "\e[0;33m"
+	echo -en $1
+	echo -en "\e[0m"
+}
+
+red()
+{
+	echo -en "\e[0;31m"
+	echo -en $1
+	echo -en "\e[0m"
+}
 
 isRunning()
 {
     /usr/bin/sudo /bin/kill -0 `/bin/cat $1` 2> /dev/null
     return $?
 }
-
-PIDFILE="${PATH}/${OPENVPN}/openvpn.pid"
-LOGFILE="${PATH}/${OPENVPN}/openvpn.log"
 
 ## Use sudo to run a command now, so we remember the password for the rest of the script
 /usr/bin/sudo echo -en ""
@@ -35,19 +49,17 @@ if [ -z ${OPENVPN} ]; then
                  if [ -e "${PATH}/${OPENVPN}/${openvpn_option}/openvpn.pid" ]; then
                      isRunning "${PATH}/${OPENVPN}/${openvpn_option}/openvpn.pid"
                      if [ $? == 0 ]; then
-                         echo -en "${txtgrn} running ${txtrst}"
+						 green "\trunning"
                      else
-                         echo -en "${txtred} dead ${txtrst}"
+                         red "\tdead"
                      fi
                  else
-                     echo -en "${txtylw} stopped ${txtrst}"
+					 yellow "\tstopped"
                  fi
                  echo -en "\n"
          done
          exit
 fi
-
-OPTIONS="${OPTIONS} --writepid ${PIDFILE}"
 
 startVPN()
 {
@@ -85,14 +97,14 @@ stopVPN()
 {
     echo "Stopping ${OPENVPN} and removing PID file."
     if [ ! -e ${PIDFILE} ]; then
-        echo -en "${txtred}The PID file does not exist.\n${txtrst}"
+		red "The PID file does not exist.\n"
         exit 1
     fi
 
     isRunning ${PIDFILE}
     running=$?
     if [ ! ${running} == 0 ]; then
-        echo -en "${txtred}The vpn is not started.\n${txtrst}"
+		yellow "The vpn is not started."
     else
         /usr/bin/sudo /bin/kill `/bin/cat ${PIDFILE}`
     fi
@@ -159,7 +171,7 @@ if [ -d ${PATH}/${OPENVPN} ]; then
          #echo "Openvpn dir found - continuing"
          echo -en ""
 else
-         echo " ${txtred} Openvpn config not found - aborting ${txtrst}"
+		 yellow "Openvpn config not found - aborting\n"
          exit 1;
 fi
 
