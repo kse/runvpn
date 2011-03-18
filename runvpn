@@ -163,28 +163,38 @@ else
          exit 1;
 fi
 
-if [ -z $2 ] || [ $2 == 'start' ]; then
+case "_$2" in
+_start|_)
     startVPN
-elif [ $2 == 'daemon' ]; then
+    ;;
+_daemon)
     OPTIONS="${OPTIONS} --log ${PATH}/${OPENVPN}/openvpn.log"
     OPTIONS="${OPTIONS} --daemon"
     startVPN
-elif [ $2 == 'stop' ]; then
+    ;;
+_stop)
     stopVPN
-elif [ $2 == 'restart' ]; then
+    ;;
+_restart)
     stopVPN
     startVPN
-elif [ $2 == 'drestart' ]; then
+    ;;
+_drestart)
     stopVPN
     OPTIONS="${OPTIONS} --log ${LOGFILE}"
     OPTIONS="${OPTIONS} --daemon"
     startVPN
-elif [ $2 == 'status' ]; then
+    ;;
+_status)
     showStatus
-elif [ $2 == 'reset' ]; then
+    ;;
+_reset)
     reset
-elif [ $2 == 'cleanup' ]; then
+    ;;
+_cleanup)
     cleanup
-else
+    ;;
+*)
     echo -en "Unknown option $@\n"
-fi
+    ;;
+esac
