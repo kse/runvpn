@@ -1,0 +1,18 @@
+_runvpn()
+{
+    local cur prev folders opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    folders=`/bin/ls -1 /home/kse/OpenVPN/`
+    opts="start restart stop status daemon reset drestart cleanup"
+
+    if [[ ${COMP_CWORD} == 1 ]] ; then
+        COMPREPLY=( $(compgen -W "${folders}" -- ${cur}) )
+    elif [[ ${COMP_CWORD} == 2 ]] ; then
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    fi
+
+    return 0
+}
+complete -F _runvpn runvpn
