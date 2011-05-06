@@ -6,6 +6,13 @@ PIDFILE="${PATH}/${OPENVPN}/openvpn.pid"
 LOGFILE="${PATH}/${OPENVPN}/openvpn.log"
 OPTIONS="${OPTIONS} --writepid ${PIDFILE}"
 
+SUDO=''
+
+if [ $UID -ne 0 ] 
+then
+    SUDO='/usr/bin/sudo'
+fi
+
 printGreen()
 {
 	echo -en "\e[0;32m"
@@ -29,12 +36,12 @@ printRed()
 
 isRunning()
 {
-    /usr/bin/sudo /bin/kill -0 `/bin/cat $1` 2> /dev/null
+    $SUDO /bin/kill -0 `/bin/cat $1` 2> /dev/null
     return $?
 }
 
 ## Use sudo to run a command now, so we remember the password for the rest of the script
-/usr/bin/sudo echo -en ""
+$SUDO echo -en ""
 ## Exit if password failed
 if [ $? != 0 ]; then
     exit 1;
@@ -74,18 +81,18 @@ startVPN()
             exit 1
         else
             echo -en "Stale PID file found. Removing\n"
-            /usr/bin/sudo /bin/rm -f ${PIDFILE}
+            $SUDO /bin/rm -f ${PIDFILE}
         fi
     fi
     
     if [ -e ${LOGFILE} ]; then
-        /usr/bin/sudo /bin/rm -f ${LOGFILE}
+        $SUDO /bin/rm -f ${LOGFILE}
     fi
 
     if [ $UID == 0 ]; then
         /usr/sbin/openvpn --cd ${PATH}/${OPENVPN} ${OPTIONS} --config ${PATH}/${OPENVPN}/${OPENVPNCONFNAME}
     else
-        /usr/bin/sudo /usr/sbin/openvpn --cd ${PATH}/${OPENVPN} ${OPTIONS} --config ${PATH}/${OPENVPN}/${OPENVPNCONFNAME}
+        $SUDO /usr/sbin/openvpn --cd ${PATH}/${OPENVPN} ${OPTIONS} --config ${PATH}/${OPENVPN}/${OPENVPNCONFNAME}
     fi
 
     if [ $? != 0 ]; then
@@ -106,10 +113,10 @@ stopVPN()
     if [ ! ${running} == 0 ]; then
 		printYellow "The vpn is not started."
     else
-        /usr/bin/sudo /bin/kill `/bin/cat ${PIDFILE}`
+        $SUDO /bin/kill `/bin/cat ${PIDFILE}`
     fi
 
-    /usr/bin/sudo /bin/rm -f ${PIDFILE}
+    $SUDO /bin/rm -f ${PIDFILE}
 }
 
 reset()
@@ -126,19 +133,19 @@ reset()
         echo -en "VPN is not running.\n"
     fi
 
-   /usr/bin/sudo /bin/kill -USR1 `/bin/cat ${PIDFILE}`
+   $SUDO /bin/kill -USR1 `/bin/cat ${PIDFILE}`
 }
 
 cleanup()
 {
     echo "Removing PID and Logfiles."
     if [ -e ${LOGFILE} ]; then
-        /usr/bin/sudo /bin/rm -f ${LOGFILE}
+        $SUDO /bin/rm -f ${LOGFILE}
         echo "Removed LOG"
     fi
 
     if [ -e ${PIDFILE} ]; then
-        /usr/bin/sudo /bin/rm -f ${PIDFILE}
+        $SUDO /bin/rm -f ${PIDFILE}
         echo "Removed PID $?"
     fi
 }
@@ -160,7 +167,7 @@ showStatus()
     fi
 
     if [ -e ${LOGFILE} ]; then
-        /usr/bin/sudo /bin/cat ${LOGFILE}
+        $SUDO /bin/cat ${LOGFILE}
     else
         echo -en "Logfile ${LOGFILE} does not exist.\n"
     fi
