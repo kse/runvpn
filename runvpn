@@ -42,6 +42,7 @@ isRunning()
 
 ## Use sudo to run a command now, so we remember the password for the rest of the script
 $SUDO echo -en ""
+
 ## Exit if password failed
 if [ $? != 0 ]; then
     exit 1;
@@ -173,6 +174,9 @@ showStatus()
     fi
 }
 
+reloadVPN() {
+}
+
 
 if [ -d ${PATH}/${OPENVPN} ]; then
          #echo "Openvpn dir found - continuing"
@@ -213,6 +217,9 @@ _reset)
 _cleanup)
     cleanup
     ;;
+_reload)
+	reloadVPN
+	;;
 *)
     echo -en "Unknown option $@\n"
     ;;
