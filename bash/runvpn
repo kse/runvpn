@@ -1,0 +1,226 @@
+#! /bin/bash
+OPENVPN=$1
+PATH="/home/kse/OpenVPN"
+OPENVPNCONFNAME='*.conf'
+PIDFILE="${PATH}/${OPENVPN}/openvpn.pid"
+LOGFILE="${PATH}/${OPENVPN}/openvpn.log"
+OPTIONS="${OPTIONS} --writepid ${PIDFILE}"
+
+SUDO=''
+
+if [ $UID -ne 0 ] 
+then
+    SUDO='/usr/bin/sudo'
+fi
+
+printGreen()
+{
+	echo -en "\e[0;32m"
+	echo -en $1
+	echo -en "\e[0m"
+}
+
+printYellow()
+{
+	echo -en "\e[0;33m"
+	echo -en $1
+	echo -en "\e[0m"
+}
+
+printRed()
+{
+	echo -en "\e[0;31m"
+	echo -en $1
+	echo -en "\e[0m"
+}
+
+isRunning()
+{
+    $SUDO /bin/kill -0 `/bin/cat $1` 2> /dev/null
+    return $?
+}
+
+## Use sudo to run a command now, so we remember the password for the rest of the script
+$SUDO echo -en ""
+
+## Exit if password failed
+if [ $? != 0 ]; then
+    exit 1;
+fi
+
+if [ -z ${OPENVPN} ]; then
+         echo "Listing openvpn"
+         for openvpn_option in $(/bin/ls -1 ${PATH})
+         do
+                 #echo -en " - ${openvpn_option}"
+                 printf ' - %20b' ${openvpn_option}
+                 if [ -e "${PATH}/${OPENVPN}/${openvpn_option}/openvpn.pid" ]; then
+                     isRunning "${PATH}/${OPENVPN}/${openvpn_option}/openvpn.pid"
+                     if [ $? == 0 ]; then
+						 printGreen "\trunning"
+                     else
+                         printRed "\tdead"
+                     fi
+                 else
+					 printYellow "\tstopped"
+                 fi
+                 echo -en "\n"
+         done
+         exit
+fi
+
+startVPN()
+{
+    echo "Starting ${OPENVPN}"
+    if [ -e ${PIDFILE} ]; then
+        isRunning $PIDFILE
+        running=$?
+        #echo $running
+        #echo -en "RUNNING ${running}\n"
+        if [ ${running} == 0 ]; then
+            echo -en "The VPN is already running\n"
+            exit 1
+        else
+            echo -en "Stale PID file found. Removing\n"
+            $SUDO /bin/rm -f ${PIDFILE}
+        fi
+    fi
+    
+    if [ -e ${LOGFILE} ]; then
+        $SUDO /bin/rm -f ${LOGFILE}
+    fi
+
+    if [ $UID == 0 ]; then
+        /usr/sbin/openvpn --cd ${PATH}/${OPENVPN} ${OPTIONS} --config ${PATH}/${OPENVPN}/${OPENVPNCONFNAME}
+    else
+        $SUDO /usr/sbin/openvpn --cd ${PATH}/${OPENVPN} ${OPTIONS} --config ${PATH}/${OPENVPN}/${OPENVPNCONFNAME}
+    fi
+
+    if [ $? != 0 ]; then
+        echo "Openvpn returned $?"
+    fi
+}
+
+stopVPN()
+{
+    echo "Stopping ${OPENVPN} and removing PID file."
+    if [ ! -e ${PIDFILE} ]; then
+		printRed "The PID file does not exist.\n"
+        exit 1
+    fi
+
+    isRunning ${PIDFILE}
+    running=$?
+    if [ ! ${running} == 0 ]; then
+		printYellow "The vpn is not started."
+    else
+        $SUDO /bin/kill `/bin/cat ${PIDFILE}`
+    fi
+
+    $SUDO /bin/rm -f ${PIDFILE}
+}
+
+reset()
+{
+    if [ ! -e ${PIDFILE} ]; then
+        echo -en "Pidfile ${PIDFILE} does not exist.\n"
+        exit 1
+    fi
+
+    isRunning ${PIDFILE}
+    running=$?
+
+    if [ ! ${running} ]; then
+        echo -en "VPN is not running.\n"
+    fi
+
+   $SUDO /bin/kill -USR1 `/bin/cat ${PIDFILE}`
+}
+
+cleanup()
+{
+    echo "Removing PID and Logfiles."
+    if [ -e ${LOGFILE} ]; then
+        $SUDO /bin/rm -f ${LOGFILE}
+        echo "Removed LOG"
+    fi
+
+    if [ -e ${PIDFILE} ]; then
+        $SUDO /bin/rm -f ${PIDFILE}
+        echo "Removed PID $?"
+    fi
+}
+
+showStatus()
+{
+    if [ ! -e ${PIDFILE} ]; then
+        echo -en "VPN is not running.\n"
+        exit 1
+    fi
+
+    isRunning ${PIDFILE}
+    running=$?
+
+    if [ ! ${running} ]; then
+        echo -en "VPN is not running. But has a stale PID file\n"
+    else
+        echo -en "VPN is up and running.\n";
+    fi
+
+    if [ -e ${LOGFILE} ]; then
+        $SUDO /bin/cat ${LOGFILE}
+    else
+        echo -en "Logfile ${LOGFILE} does not exist.\n"
+    fi
+}
+
+reloadVPN() {
+}
+
+
+if [ -d ${PATH}/${OPENVPN} ]; then
+         #echo "Openvpn dir found - continuing"
+         echo -en ""
+else
+		 printYellow "Openvpn config not found - aborting\n"
+         exit 1;
+fi
+
+case "_$2" in
+_start|_)
+    startVPN
+    ;;
+_daemon)
+    OPTIONS="${OPTIONS} --log ${PATH}/${OPENVPN}/openvpn.log"
+    OPTIONS="${OPTIONS} --daemon"
+    startVPN
+    ;;
+_stop)
+    stopVPN
+    ;;
+_restart)
+    stopVPN
+    startVPN
+    ;;
+_drestart)
+    stopVPN
+    OPTIONS="${OPTIONS} --log ${LOGFILE}"
+    OPTIONS="${OPTIONS} --daemon"
+    startVPN
+    ;;
+_status)
+    showStatus
+    ;;
+_reset)
+    reset
+    ;;
+_cleanup)
+    cleanup
+    ;;
+_reload)
+	reloadVPN
+	;;
+*)
+    echo -en "Unknown option $@\n"
+    ;;
+esac
