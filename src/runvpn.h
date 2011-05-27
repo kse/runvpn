@@ -6,6 +6,7 @@
 #define BLUE_GRAY		"\e[40;1;34m"
 
 #define PID_FILE 		"openvpn.pid"
+#define LOG_FILE		"openvpn.log"
 #define CONF_PATTERN	"*.conf"
 
 /* Defines for vpn status */
@@ -14,17 +15,24 @@
 #define VPN_PERM_DENIED	3
 #define VPN_STALE_PID	4
 
+#define DAEMON			1
+#define NO_DAEMON		2
+
 struct vpn {
 	char	*name;
 	char	*path;
 	char	*config;
+	int		status;
+	int		pid;
 	struct vpn *next;
 };
 
+int stop_vpn (struct vpn *vpn);
 int get_vpn(const char *root_folder, char *name, struct vpn *vpn);
-int start_vpn (struct vpn *vpn, const char *name);
+int start_vpn (struct vpn *vpn, int daemon);
 int delete_pid_file(struct vpn *vpn);
 struct vpn* get_vpns(const char* root_folder);
 int vpn_status(struct vpn* vpn);
 void print_color(const char* text, char* color);
+void reload_vpn (struct vpn *vpn);
 void chomp (char *string);

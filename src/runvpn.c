@@ -60,16 +60,121 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Problem finding vpn: %s\n", strerror(errno));
 			return 1;
 		}
-		start_vpn(&vpn, argv[argc - 1]);
+		vpn_status(&vpn);
+		start_vpn(&vpn, NO_DAEMON);
+
+	} else if (argc == 3) {
+		struct vpn vpn;
+		char *name = *++argv;
+		char *argument = *++argv;
+
+		if(get_vpn(root_folder, name, &vpn) == -1) {
+			fprintf(stderr, "Problem finding vpn: %s\n", strerror(errno));
+		}
+		vpn_status(&vpn);
+
+		/* Do different things depending on 2nd argument pased. */
+		if (strcmp(argument, "stop") == 0) {
+			stop_vpn(&vpn);
+		} else if (strcmp(argument, "reload") == 0) {
+			reload_vpn(&vpn);
+		} else if (strcmp(argument, "daemon") == 0) {
+			start_vpn(&vpn, DAEMON);
+		} else if (strcmp(argument, "drestart") == 0) {
+			stop_vpn(&vpn);
+			start_vpn(&vpn, DAEMON);
+		} else if (strcmp(argument, "restart") == 0) {
+			stop_vpn(&vpn);
+			start_vpn(&vpn, NO_DAEMON);
+		} else {
+			fprintf(stderr, "Unknown argument '%s'\n", argument);
+		}
 	}
 	return EXIT_SUCCESS;
 }
 
-int start_vpn (struct vpn *vpn, const char *name) {
-	(void) vpn;
-	(void) name;
+int start_vpn (struct vpn *vpn, int as_daemon) {
+	char root_prefix[] = "--cd";
+	char conf_prefix[] = "--config";
+	char conf_security[] = "--script-security";
+	char security_val[] = "2";
+
+	switch (vpn->status) {
+		case VPN_RUNNING:
+			printf("VPN %s is already running.\n", vpn->name);
+			exit(EXIT_FAILURE);
+			break;
+	}
+
+	printf("Starting VPN %s\n", vpn->name);
+
+	if( as_daemon == DAEMON ) {
+		execl("/usr/sbin/openvpn", "/usr/sbin/openvpn",
+				root_prefix, vpn->path,
+				conf_prefix, vpn->config,
+				conf_security, security_val,
+				"--log", LOG_FILE,
+				"--writepid", PID_FILE,
+				"--daemon",
+				(char *)NULL);
+	} else {
+		execl("/usr/sbin/openvpn", "/usr/sbin/openvpn",
+				root_prefix, vpn->path,
+				conf_prefix, vpn->config,
+				conf_security, security_val,
+				"--writepid", PID_FILE,
+				(char *)NULL);
+	}
 
 	return 0;
+}
+
+int stop_vpn (struct vpn *vpn) {
+	int kill_status;
+
+	if(vpn->status != VPN_RUNNING) {
+		fprintf(stderr, "Error stopping VPN '%s', it is not currently running.\n", vpn->name);
+		return -1;
+	}
+
+	kill_status = kill(vpn->pid, 15);
+
+	switch (kill_status) {
+		case EPERM:
+			fprintf(stderr, "You don't have permission to kill pid %i\n", vpn->pid);
+			exit(EXIT_FAILURE);
+			break;
+		case ESRCH:
+			fprintf(stderr, "No such process %i\n", vpn->pid);
+			break;
+		default:
+			print_color("VPN stopped successfully", GREEN);
+			vpn->status = VPN_DEAD;
+	}
+
+	return 0;
+}
+
+void reload_vpn (struct vpn *vpn) {
+	int kill_status;
+
+	if(vpn->status != VPN_RUNNING) {
+		fprintf(stderr, "Error stopping VPN '%s', it is not currently running.\n", vpn->name);
+		exit(EXIT_FAILURE);
+	}
+
+	kill_status = kill(vpn->pid, 10);
+
+	switch (kill_status) {
+		case EPERM:
+			fprintf(stderr, "You don't have permission to send signals to pid %i\n", vpn->pid);
+			break;
+		case ESRCH:
+			fprintf(stderr, "Not such process %i\n", vpn->pid);
+			break;
+		default:
+			print_color("VPN reloaded successfully", GREEN);
+	}
 }
 
 void print_color(const char* text, char* color) {
@@ -120,10 +225,7 @@ struct vpn* get_vpns(const char* root_folder) {
 		if(dir->d_type == DT_DIR) {
 			current = malloc(sizeof(struct vpn));
 
-			current->name = strdup(dir->d_name);
-
-			current->path = malloc(strlen(root_folder) + strlen(dir->d_name) + 2);
-			sprintf(current->path, "%s/%s", root_folder, dir->d_name);
+			get_vpn(root_folder, dir->d_name, current);
 
 			current->next = NULL;
 			if(next != NULL) {
@@ -156,7 +258,7 @@ int get_vpn(const char *root_folder, char *name, struct vpn *vpn) {
 
 
 	if (chdir(vpn->path) == -1) {
-		fprintf(stderr, "Error changing to folder '%s': %m", vpn->path);
+		fprintf(stderr, "Error changing to folder '%s': %m\n", vpn->path);
 	}
 	glob_rtrn = glob(CONF_PATTERN, GLOB_NOESCAPE, NULL, &wcard);
 
@@ -170,8 +272,6 @@ int get_vpn(const char *root_folder, char *name, struct vpn *vpn) {
 			strcpy(vpn->config, vpn->path);
 			strcat(vpn->config, "/");
 			strcat(vpn->config, wcard.gl_pathv[0]);
-
-			fprintf(stdout, "%s\n", vpn->config);
 			break;
 		case GLOB_NOMATCH:
 			fprintf(stderr, "VPN not found: '%s'\n", name);
@@ -189,33 +289,40 @@ int get_vpn(const char *root_folder, char *name, struct vpn *vpn) {
 int vpn_status(struct vpn* vpn) {
 	FILE *pid_file;
 	int pid;
-	char line[10];
+	char line[11];
 
 	if(chdir(vpn->path) == -1) {
-		fprintf(stderr, "Error changing to folder '%s': %s", vpn->path, strerror(errno));
+		fprintf(stderr, "Error changing to folder '%s': %s\n", vpn->path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	pid_file = fopen(PID_FILE, "r");
 
 	if(pid_file == NULL) {
+		vpn->status = VPN_DEAD;
 		return VPN_DEAD;
 	}
 
 	if(fgets(line, 10, pid_file) == NULL) {
+		vpn->status = VPN_DEAD;
 		return VPN_DEAD;
 	}
 	chomp(line);
 	pid = atoi(line);
-
 	
 	if(kill(pid, 0) == -1) {
-		if (errno == ESRCH) 
+		if (errno == ESRCH) {
+			vpn->status = VPN_STALE_PID;
 			return VPN_STALE_PID;
-		else if (errno == EPERM)
+		}
+		else if (errno == EPERM) {
+			vpn->status = VPN_PERM_DENIED;
 			return VPN_PERM_DENIED;
+		}
 	}
 
+	vpn->status = VPN_RUNNING;
+	vpn->pid = pid;
 	return VPN_RUNNING;
 }
 
