@@ -5,11 +5,11 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
 #include <glob.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
+#include <fcntl.h>
 
 
 int main(int argc, char **argv) {
@@ -17,15 +17,14 @@ int main(int argc, char **argv) {
 	struct vpn *vpn;
 	int status;
 
-	(void) argv;
-
 	if(root_folder == NULL) {
 		printf("Environment variable \"runvpn_root\" is not defined.\n");
 		return EXIT_FAILURE;
 	}
 
 	if(argc == 1) {
-		fprintf(stdout, "%30s%s%s\n", BLUE_GRAY, "Listing VPNS", RESET);
+		//fprintf(stdout, "%30s%s%s\n", BLUE_GRAY, "Listing VPNS", RESET);
+		puts("                    " BLUE_GRAY "Listing VPNS" RESET);
 		vpn = get_vpns(root_folder);
 
 		while (vpn != NULL) {
@@ -45,6 +44,7 @@ int main(int argc, char **argv) {
 					break;
 				case VPN_STALE_PID :
 					print_color("Down", YELLOW);
+					unlink(vpn->log);
 					delete_pid_file(vpn);
 					break;
 				default :
@@ -86,11 +86,39 @@ int main(int argc, char **argv) {
 		} else if (strcmp(argument, "restart") == 0) {
 			stop_vpn(&vpn);
 			start_vpn(&vpn, NO_DAEMON);
+		} else if (strcmp(argument, "log") == 0) {
+			print_log(&vpn);
 		} else {
-			fprintf(stderr, "Unknown argument '%s'\n", argument);
+			fprintf(stderr, "Unknown action '%s'\n", argument);
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+void print_log(struct vpn *vpn) {
+	FILE *log;
+
+	//Output buffer
+	char buffer[2];
+	buffer[1] = '\0';
+
+	log = fopen(vpn->log, "r");
+
+	if( log == NULL ) {
+		switch (errno) {
+			case EACCES:
+				puts("Unable to open logfile.");
+				return;
+			break;
+			default:
+				fprintf(stderr, "Error opening log %s: %m\n", vpn->log);
+				return;
+		}
+	}
+
+	while(fread(buffer, 1, 1, log)) {
+		fputs(buffer, stdout);
+	}
 }
 
 int start_vpn (struct vpn *vpn, int as_daemon) {
@@ -184,9 +212,7 @@ void print_color(const char* text, char* color) {
 int delete_pid_file(struct vpn *vpn) {
 	char *path = malloc(strlen(vpn->path) + strlen(PID_FILE) + 2);
 
-	strcpy(path, vpn->path);
-	strcat(path, "/");
-	strcat(path, PID_FILE);
+	sprintf(path, "%s/%s", vpn->path, PID_FILE);
 
 	if (unlink(path) == -1) {
 		switch (errno) {
@@ -225,7 +251,7 @@ struct vpn* get_vpns(const char* root_folder) {
 		if(dir->d_type == DT_DIR) {
 			current = malloc(sizeof(struct vpn));
 
-			get_vpn(root_folder, dir->d_name, current);
+			get_vpn(root_folder, strdup(dir->d_name), current);
 
 			current->next = NULL;
 			if(next != NULL) {
@@ -246,15 +272,16 @@ int get_vpn(const char *root_folder, char *name, struct vpn *vpn) {
 	int glob_rtrn;
 	glob_t wcard;
 
-	strcpy(path, root_folder);
-	strcat(path, "/");
-	strcat(path, name);
+	sprintf(path, "%s/%s", root_folder, name);
 
 	if(access(path, F_OK) == -1) {
 		return -1;
 	}
 	vpn->name = name;
 	vpn->path = path;
+	vpn->log = malloc(strlen(path) + strlen(LOG_FILE) + 2);
+
+	sprintf(vpn->log, "%s/%s", path, LOG_FILE);
 
 
 	if (chdir(vpn->path) == -1) {
@@ -267,11 +294,10 @@ int get_vpn(const char *root_folder, char *name, struct vpn *vpn) {
 			if (wcard.gl_pathc > 2) {
 				fprintf(stderr, "Warning, there are several .conf files. using the first.\n");
 			}
+
 			vpn->config = malloc(strlen(vpn->path) + strlen(wcard.gl_pathv[0]) + 2);
 
-			strcpy(vpn->config, vpn->path);
-			strcat(vpn->config, "/");
-			strcat(vpn->config, wcard.gl_pathv[0]);
+			sprintf(vpn->config, "%s/%s", vpn->path, wcard.gl_pathv[0]);
 			break;
 		case GLOB_NOMATCH:
 			fprintf(stderr, "VPN not found: '%s'\n", name);

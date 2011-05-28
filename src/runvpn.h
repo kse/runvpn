@@ -22,11 +22,13 @@ struct vpn {
 	char	*name;
 	char	*path;
 	char	*config;
+	char	*log;
 	int		status;
 	int		pid;
 	struct vpn *next;
 };
 
+void print_log(struct vpn *vpn);
 int stop_vpn (struct vpn *vpn);
 int get_vpn(const char *root_folder, char *name, struct vpn *vpn);
 int start_vpn (struct vpn *vpn, int daemon);
