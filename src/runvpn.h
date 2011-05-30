@@ -9,23 +9,25 @@
 #define LOG_FILE      "openvpn.log"
 #define CONF_PATTERN  "*.conf"
 
-/* Defines for vpn status */
-#define VPN_RUNNING     1
-#define VPN_DEAD        2
-#define VPN_PERM_DENIED	3
-#define VPN_STALE_PID   4
+#define DAEMON        1
+#define NO_DAEMON     2
 
-#define DAEMON          1
-#define NO_DAEMON       2
+/* Defines for vpn status */
+enum vpn_status {
+	VPN_RUNNING     = 1,
+	VPN_DEAD        = 2,
+	VPN_PERM_DENIED	= 3,
+	VPN_STALE_PID   = 4
+};
 
 struct vpn {
-	char       *name;
-	char       *path;
-	char       *config;
-	char       *log;
-	int        status;
-	int        pid;
-	struct vpn *next;
+	char            *name;
+	char            *path;
+	char            *config;
+	char            *log;
+	enum vpn_status status;
+	int             pid;
+	struct vpn      *next;
 };
 
 void print_log(struct vpn *vpn);

@@ -145,6 +145,9 @@ start_vpn(struct vpn *vpn, int as_daemon)
 	case VPN_RUNNING:
 		printf("VPN %s is already running.\n", vpn->name);
 		exit(EXIT_FAILURE);
+
+	default:
+		break;
 	}
 
 	printf("Starting VPN %s\n", vpn->name);
