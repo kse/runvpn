@@ -17,7 +17,6 @@ main(int argc, char *argv[])
 {
 	const char *root_folder = getenv("runvpn_root");
 	struct vpn *vpn;
-	int status;
 
 	if (root_folder == NULL) {
 		printf("Environment variable \"runvpn_root\" is not defined.\n");
@@ -27,14 +26,11 @@ main(int argc, char *argv[])
 	if (argc == 1) {
 		/* fprintf(stdout, "%30s%s%s\n", BLUE_GRAY, "Listing VPNS", RESET); */
 		puts("                    " BLUE_GRAY "Listing VPNS" RESET);
-		vpn = get_vpns(root_folder);
 
-		while (vpn != NULL) {
-			status = vpn_status(vpn);
-
+		for (vpn = get_vpns(root_folder); vpn; vpn = vpn->next) {
 			fprintf(stdout, "%25s - ", vpn->name);
 
-			switch (status) {
+			switch (vpn_status(vpn)) {
 			case VPN_DEAD:
 				print_color("Down", YELLOW);
 				break;
@@ -57,9 +53,8 @@ main(int argc, char *argv[])
 				print_color("Unknown", RED);
 				break;
 			}
-
-			vpn = vpn->next;
 		}
+
 	} else if (argc == 2) {
 		struct vpn vpn;
 
