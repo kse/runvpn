@@ -12,6 +12,40 @@
 
 #include "runvpn.h"
 
+static void
+oom()
+{
+	static const char e[] = "Out of memory\n";
+
+	fprintf(stderr, e);
+#ifdef SIGQUIT
+	raise(SIGQUIT);
+#endif
+	_Exit(EXIT_FAILURE);
+}
+
+static void *
+xmalloc(size_t size)
+{
+	void *p = malloc(size);
+
+	if (p == NULL)
+		oom();
+
+	return p;
+}
+
+static char *
+xstrdup(const char *str)
+{
+	char *dup = strdup(str);
+
+	if (dup == NULL)
+		oom();
+
+	return dup;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -212,7 +246,7 @@ print_color(const char *text, char *color)
 int
 delete_pid_file(struct vpn *vpn)
 {
-	char *path = malloc(strlen(vpn->path) + strlen(PID_FILE) + 2);
+	char *path = xmalloc(strlen(vpn->path) + strlen(PID_FILE) + 2);
 
 	sprintf(path, "%s/%s", vpn->path, PID_FILE);
 
@@ -248,9 +282,9 @@ get_vpns(const char *root_folder)
 			continue;
 
 		if (dir->d_type == DT_DIR) {
-			struct vpn *new = malloc(sizeof(struct vpn));
+			struct vpn *new = xmalloc(sizeof(struct vpn));
 
-			get_vpn(root_folder, strdup(dir->d_name), new);
+			get_vpn(root_folder, xstrdup(dir->d_name), new);
 
 			new->next = head;
 			head = new;
@@ -265,7 +299,7 @@ get_vpns(const char *root_folder)
 int
 get_vpn(const char *root_folder, char *name, struct vpn *vpn)
 {
-	char *path = malloc(strlen(root_folder) + 2 + strlen(name));
+	char *path = xmalloc(strlen(root_folder) + 2 + strlen(name));
 	glob_t wcard;
 
 	sprintf(path, "%s/%s", root_folder, name);
@@ -275,7 +309,7 @@ get_vpn(const char *root_folder, char *name, struct vpn *vpn)
 
 	vpn->name = name;
 	vpn->path = path;
-	vpn->log = malloc(strlen(path) + strlen(LOG_FILE) + 2);
+	vpn->log = xmalloc(strlen(path) + strlen(LOG_FILE) + 2);
 
 	sprintf(vpn->log, "%s/%s", path, LOG_FILE);
 
@@ -287,7 +321,7 @@ get_vpn(const char *root_folder, char *name, struct vpn *vpn)
 		if (wcard.gl_pathc > 2)
 			fprintf(stderr, "Warning, there are several .conf files. using the first.\n");
 
-		vpn->config = malloc(strlen(vpn->path) + strlen(wcard.gl_pathv[0]) + 2);
+		vpn->config = xmalloc(strlen(vpn->path) + strlen(wcard.gl_pathv[0]) + 2);
 
 		sprintf(vpn->config, "%s/%s", vpn->path, wcard.gl_pathv[0]);
 		break;
