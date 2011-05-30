@@ -237,10 +237,9 @@ delete_pid_file(struct vpn *vpn)
 struct vpn *
 get_vpns(const char *root_folder)
 {
-	struct dirent *dir;
 	DIR *dfd_root;
-	struct vpn *current = NULL;
-	struct vpn *next = NULL;
+	struct dirent *dir;
+	struct vpn *head = NULL;
 
 	dfd_root = opendir(root_folder);
 	if (dfd_root == NULL) {
@@ -254,21 +253,18 @@ get_vpns(const char *root_folder)
 			continue;
 
 		if (dir->d_type == DT_DIR) {
-			current = malloc(sizeof(struct vpn));
+			struct vpn *new = malloc(sizeof(struct vpn));
 
-			get_vpn(root_folder, strdup(dir->d_name), current);
+			get_vpn(root_folder, strdup(dir->d_name), new);
 
-			current->next = NULL;
-			if (next != NULL)
-				current->next = next;
-
-			next = current;
+			new->next = head;
+			head = new;
 		} 
 	}
 
 	closedir(dfd_root);
 
-	return current;
+	return head;
 }
 
 int
