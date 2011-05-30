@@ -130,10 +130,16 @@ print_log(struct vpn *vpn)
 int
 start_vpn(struct vpn *vpn, int as_daemon)
 {
-	char root_prefix[] = "--cd";
-	char conf_prefix[] = "--config";
-	char conf_security[] = "--script-security";
-	char security_val[] = "2";
+	char *argv[] = {
+		"/usr/sbin/openvpn",
+		"--cd", vpn->path,
+		"--config", vpn->config,
+		"--script-security", "2",
+		"--log", LOG_FILE,
+		"--writepid", PID_FILE,
+		as_daemon ? "--daemon" : NULL,
+		NULL
+	};
 
 	switch (vpn->status) {
 	case VPN_RUNNING:
@@ -143,22 +149,10 @@ start_vpn(struct vpn *vpn, int as_daemon)
 
 	printf("Starting VPN %s\n", vpn->name);
 
-	if (as_daemon == DAEMON) {
-		execl("/usr/sbin/openvpn", "/usr/sbin/openvpn",
-				root_prefix, vpn->path,
-				conf_prefix, vpn->config,
-				conf_security, security_val,
-				"--log", LOG_FILE,
-				"--writepid", PID_FILE,
-				"--daemon",
-				(char *)NULL);
-	} else {
-		execl("/usr/sbin/openvpn", "/usr/sbin/openvpn",
-				root_prefix, vpn->path,
-				conf_prefix, vpn->config,
-				conf_security, security_val,
-				"--writepid", PID_FILE,
-				(char *)NULL);
+	if (execv("/usr/sbin/openvpn", argv)) {
+		fprintf(stderr, "Error executing /usr/sbin/openvpn: %s\n",
+		        strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;
