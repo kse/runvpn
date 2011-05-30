@@ -30,13 +30,13 @@ struct vpn {
 	struct vpn      *next;
 };
 
-void print_log(struct vpn *vpn);
-int stop_vpn(struct vpn *vpn);
-int get_vpn(const char *root_folder, char *name, struct vpn *vpn);
-int start_vpn(struct vpn *vpn, int daemon);
-int delete_pid_file(struct vpn *vpn);
+int vpn_init(struct vpn *vpn, const char *folder, const char *name);
+enum vpn_status vpn_status(struct vpn *vpn);
+int vpn_start(struct vpn *vpn, int daemon);
+int vpn_stop(struct vpn *vpn);
+void vpn_reload(struct vpn *vpn);
+void vpn_dumplog(struct vpn *vpn);
+int vpn_delete_pidfile(struct vpn *vpn);
+
 struct vpn *get_vpns(const char *root_folder);
-int vpn_status(struct vpn *vpn);
 void print_color(const char *text, char *color);
-void reload_vpn(struct vpn *vpn);
-void chomp(char *string);
