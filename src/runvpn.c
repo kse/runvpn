@@ -174,9 +174,9 @@ vpn_start(struct vpn *vpn, int as_daemon)
 		"--cd", vpn->path,
 		"--config", vpn->config,
 		"--script-security", "2",
-		"--log", LOG_FILE,
 		"--writepid", PID_FILE,
-		as_daemon ? "--daemon" : NULL,
+		as_daemon == DAEMON ? "--daemon" : NULL,
+		"--log", LOG_FILE,
 		NULL
 	};
 
