@@ -107,8 +107,7 @@ void
 print_log(struct vpn *vpn)
 {
 	FILE *log;
-	char buffer[2];
-	buffer[1] = '\0';
+	int c;
 
 	log = fopen(vpn->log, "r");
 	if (log == NULL) {
@@ -120,12 +119,12 @@ print_log(struct vpn *vpn)
 		default:
 			fprintf(stderr, "Error opening log %s: %m\n", vpn->log);
 		}
+
 		return;
 	}
 
-	while(fread(buffer, 1, 1, log)) {
-		fputs(buffer, stdout);
-	}
+	while ((c = fgetc(log)) != EOF)
+		putc(c, stdout);
 }
 
 int
