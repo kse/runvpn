@@ -1,5 +1,11 @@
 ############## TODO ##############
 
-* Init-scripts so we can start/stop our vpn's with the computer
+* Init-scripts so we can start/stop our vpn's with the computer.
+
+* Implementation of state file.
+
+* Location based vpn setup booting.
 
 * Sort the list of VPN's and present the alphabetically.
+
+* Only print colours if the terminal can handle it.
