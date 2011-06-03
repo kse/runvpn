@@ -40,3 +40,7 @@ int vpn_delete_pidfile(struct vpn *vpn);
 
 struct vpn *get_vpns(const char *root_folder);
 void print_color(const char *text, char *color);
+
+void *xmalloc(size_t size);
+char *xstrdup(const char *str);
+void vpn_delete_logfile(struct vpn *vpn);
