@@ -3,7 +3,7 @@ CFLAGS  ?= -Wall -Wextra -O2 -pipe
 OUTPUT   = runvpn
 
 INSTALL  = install
-PREFIX   = /usr/local
+PREFIX   = /usr
 BIN_DIR  = $(PREFIX)/bin
 BASH_COMPLETION_DIR = /etc/bash_completion.d
 OBJECT_FILES		= src/runvpn.o src/vpn.o
