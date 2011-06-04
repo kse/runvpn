@@ -15,10 +15,11 @@
 
 /* Defines for vpn status */
 enum vpn_status {
-	VPN_RUNNING     = 1,
-	VPN_DEAD        = 2,
-	VPN_PERM_DENIED	= 3,
-	VPN_STALE_PID   = 4
+	VPN_ERROR,
+	VPN_RUNNING,
+	VPN_DEAD,
+	VPN_PERM_DENIED,
+	VPN_STALE_PID
 };
 
 struct vpn {

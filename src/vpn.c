@@ -33,7 +33,8 @@ vpn_status(struct vpn *vpn)
 	if (chdir(vpn->path) == -1) {
 		log_error("Error changing to folder '%s': %s",
 		          vpn->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		vpn->status = VPN_ERROR;
+		goto out;
 	}
 
 	pid_file = fopen(vpn->pid_file, "r");
@@ -53,12 +54,19 @@ vpn_status(struct vpn *vpn)
 		switch (errno) {
 		case ESRCH:
 			vpn->status = VPN_STALE_PID;
-			goto out;
+			break;
 
 		case EPERM:
 			vpn->status = VPN_PERM_DENIED;
-			goto out;
+			break;
+
+		default:
+			log_error("Unknown return from kill");
+			vpn->status = VPN_ERROR;
+			break;
 		}
+
+		goto out;
 	}
 
 	vpn->status = VPN_RUNNING;

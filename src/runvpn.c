@@ -66,6 +66,9 @@ main(int argc, char *argv[])
 			fprintf(stdout, "%25s - ", vpn->name);
 
 			switch (vpn_status(vpn)) {
+			case VPN_ERROR:
+				return EXIT_FAILURE;
+
 			case VPN_DEAD:
 				print_color("Down", YELLOW);
 				break;
@@ -98,7 +101,9 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		vpn_status(&vpn);
+		if (vpn_status(&vpn) == VPN_ERROR)
+			return EXIT_FAILURE;
+
 		vpn_start(&vpn, NO_DAEMON);
 
 	} else if (argc == 3) {
@@ -111,7 +116,8 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		vpn_status(&vpn);
+		if (vpn_status(&vpn) == VPN_ERROR)
+			return EXIT_FAILURE;
 
 		/* Do different things depending on 2nd argument pased. */
 		if (strcmp(argument, "stop") == 0) {
