@@ -51,7 +51,7 @@ int
 main(int argc, char *argv[])
 {
 	const char *root_folder = getenv("runvpn_root");
-	struct vpn *vpn;
+	struct vpn *vpn = NULL;
 
 	if (root_folder == NULL) {
 		printf("Environment variable \"runvpn_root\" is not defined.\n");

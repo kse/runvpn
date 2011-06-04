@@ -39,6 +39,7 @@ void vpn_dumplog(struct vpn *vpn);
 int vpn_delete_pidfile(struct vpn *vpn);
 
 struct vpn *get_vpns(const char *root_folder);
+struct vpn * vpns_sort(struct vpn *vpn);
 void print_color(const char *text, char *color);
 
 void *xmalloc(size_t size);

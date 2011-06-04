@@ -253,6 +253,7 @@ vpn_init(struct vpn *vpn, const char *folder, const char *name)
 	vpn->path   = path;
 	vpn->log    = log;
 	vpn->config = config;
+	vpn->next	= NULL;
 
 	return 0;
 
@@ -270,9 +271,12 @@ error:
 struct vpn *
 get_vpns(const char *root_folder)
 {
-	DIR *dfd_root;
-	struct dirent *dir;
-	struct vpn *head = NULL;
+	DIR 	*dfd_root;
+	struct 	dirent 	*dir;
+	struct 	vpn 	*head = NULL;
+	struct 	vpn 	*t_vpn = NULL;
+	struct	vpn		*prev = NULL;
+	int 			cmp;
 
 	dfd_root = opendir(root_folder);
 	if (dfd_root == NULL) {
@@ -291,8 +295,49 @@ get_vpns(const char *root_folder)
 			if (vpn_init(new, root_folder, dir->d_name))
 				return NULL;
 
-			new->next = head;
-			head = new;
+
+			if(head == NULL) {
+				head = new;
+				t_vpn = head;
+			} else {
+				// Reset loop variables.
+				t_vpn = head;
+				prev = NULL;
+
+				while(1) {
+					cmp = strcasecmp(t_vpn->name, new->name);
+
+					// If t_vpn is greater than new.
+					if(cmp > 0) {
+						//We add t_vpn ahead of new.
+						new->next = t_vpn;
+
+						// If we had a previous, we correct the adressing.
+						if(prev != NULL) {
+							prev->next = new;
+						}
+						
+						// If t_vpn is head, replace the link to head.
+						if(t_vpn == head) {
+							head = new;
+						}
+
+						break;
+
+					} else if(t_vpn->next == NULL) {
+						// If this is the case we've reached the end of the linked list.
+						// Therefore we just append
+						t_vpn->next = new;
+						break;
+					}
+
+					// Remember the previous VPN
+					prev = t_vpn;
+
+					// Loop over the next point in our list.
+					t_vpn = t_vpn->next;
+				}
+			}
 		}
 	}
 
