@@ -12,6 +12,8 @@
 
 #include "runvpn.h"
 
+#define log_error(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
+
 static void
 chomp(char *string)
 {
@@ -29,7 +31,8 @@ vpn_status(struct vpn *vpn)
 	char line[11];
 
 	if (chdir(vpn->path) == -1) {
-		fprintf(stderr, "Error changing to folder '%s': %s\n", vpn->path, strerror(errno));
+		log_error("Error changing to folder '%s': %s",
+		          vpn->path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -84,7 +87,7 @@ vpn_start(struct vpn *vpn, int as_daemon)
 
 	switch (vpn->status) {
 	case VPN_RUNNING:
-		printf("VPN %s is already running.\n", vpn->name);
+		log_error("VPN %s is already running", vpn->name);
 		exit(EXIT_FAILURE);
 
 	default:
@@ -94,8 +97,8 @@ vpn_start(struct vpn *vpn, int as_daemon)
 	printf("Starting VPN %s\n", vpn->name);
 
 	if (execv("/usr/sbin/openvpn", argv)) {
-		fprintf(stderr, "Error executing /usr/sbin/openvpn: %s\n",
-		        strerror(errno));
+		log_error("Error executing /usr/sbin/openvpn: %s",
+		          strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -106,17 +109,18 @@ int
 vpn_stop(struct vpn *vpn)
 {
 	if (vpn->status != VPN_RUNNING) {
-		fprintf(stderr, "Error stopping VPN '%s', it is not currently running.\n", vpn->name);
+		log_error("Error stopping VPN '%s', it is not currently running",
+		          vpn->name);
 		return -1;
 	}
 
 	switch (kill(vpn->pid, 15)) {
 	case EPERM:
-		fprintf(stderr, "You don't have permission to kill pid %i\n", vpn->pid);
+		log_error("You don't have permission to kill pid %i", vpn->pid);
 		exit(EXIT_FAILURE);
 
 	case ESRCH:
-		fprintf(stderr, "No such process %i\n", vpn->pid);
+		log_error("No such process %i", vpn->pid);
 		break;
 
 	default:
@@ -131,17 +135,19 @@ void
 vpn_reload(struct vpn *vpn)
 {
 	if (vpn->status != VPN_RUNNING) {
-		fprintf(stderr, "Error stopping VPN '%s', it is not currently running.\n", vpn->name);
+		log_error("Error stopping VPN '%s', it is not currently running",
+		          vpn->name);
 		exit(EXIT_FAILURE);
 	}
 
 	switch (kill(vpn->pid, 10)) {
 	case EPERM:
-		fprintf(stderr, "You don't have permission to send signals to pid %i\n", vpn->pid);
+		log_error("You don't have permission to send signals to pid %i",
+		          vpn->pid);
 		break;
 
 	case ESRCH:
-		fprintf(stderr, "Not such process %i\n", vpn->pid);
+		log_error("Not such process %i", vpn->pid);
 		break;
 
 	default:
@@ -163,7 +169,8 @@ vpn_dumplog(struct vpn *vpn)
 			break;
 
 		default:
-			fprintf(stderr, "Error opening log %s: %m\n", vpn->log);
+			log_error("Error opening log '%s': %s",
+			          vpn->log, strerror(errno));
 		}
 
 		return;
@@ -178,7 +185,8 @@ vpn_delete_logfile(struct vpn *vpn)
 {
 	switch(unlink(vpn->log)) {
 		case EPERM:
-			fprintf(stderr, "Error deleting logfile %m");
+			log_error("Error deleting logfile: %s",
+			          strerror(errno));
 			break;
 	}
 }
@@ -189,7 +197,8 @@ vpn_delete_pidfile(struct vpn *vpn)
 	if (unlink(vpn->pid_file) == -1) {
 		switch (errno) {
 		default:
-			fprintf(stderr, "Error trying to remove file '%s': %s\n", vpn->pid_file, strerror(errno));
+			log_error("Error trying to remove file '%s': %s",
+			          vpn->pid_file, strerror(errno));
 			break;
 		}
 	}
@@ -212,7 +221,8 @@ vpn_init(struct vpn *vpn, const char *folder, const char *name)
 		goto error;
 
 	if (chdir(path) == -1) {
-		fprintf(stderr, "Error changing to folder '%s': %m\n", path);
+		log_error("Error changing to folder '%s': %s",
+		          path, strerror(errno));
 		goto error;
 	}
 
@@ -224,24 +234,26 @@ vpn_init(struct vpn *vpn, const char *folder, const char *name)
 		break;
 
 	case GLOB_NOMATCH:
-		fprintf(stderr, "VPN not found: '%s'\n", name);
+		log_error("VPN not found: '%s'", name);
 		globfree(&wcard);
 		goto error;
 
 	default:
-		fprintf(stderr, "Failure finding config: %s\n",
-		        strerror(errno));
+		log_error("Failure finding config: %s",
+		          strerror(errno));
 		globfree(&wcard);
 		goto error;
 	}
 
 	if (wcard.gl_pathc > 2)
-		fprintf(stderr, "Warning, there are several .conf files. using the first.\n");
+		log_error("Warning, there are several .conf files. Using the first");
 
 	config = xmalloc(strlen(path) + 1 + strlen(wcard.gl_pathv[0]) + 1);
 	sprintf(config, "%s/%s", path, wcard.gl_pathv[0]);
 
-	vpn->pid_file	= xmalloc(strlen(name) + strlen(PID_PREFIX) + strlen(PID_SUFFIX) + 2);
+	vpn->pid_file = xmalloc(strlen(name) +
+	                        strlen(PID_PREFIX) +
+	                        strlen(PID_SUFFIX) + 2);
 
 	sprintf(vpn->pid_file, "%s/%s%s", PID_PREFIX, name, PID_SUFFIX);
 
@@ -278,7 +290,7 @@ get_vpns(const char *root_folder)
 
 	dfd_root = opendir(root_folder);
 	if (dfd_root == NULL) {
-		fprintf(stderr, "Cannot open directory %s.\n", root_folder);
+		log_error("Cannot open directory '%s'", root_folder);
 		exit(EXIT_FAILURE);
 	}
 
