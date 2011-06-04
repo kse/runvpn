@@ -33,7 +33,7 @@ vpn_status(struct vpn *vpn)
 		exit(EXIT_FAILURE);
 	}
 
-	pid_file = fopen(PID_FILE, "r");
+	pid_file = fopen(vpn->pid_file, "r");
 	if (pid_file == NULL) {
 		vpn->status = VPN_DEAD;
 		goto out;
@@ -76,7 +76,7 @@ vpn_start(struct vpn *vpn, int as_daemon)
 		"--cd", vpn->path,
 		"--config", vpn->config,
 		"--script-security", "2",
-		"--writepid", PID_FILE,
+		"--writepid", vpn->pid_file,
 		as_daemon == DAEMON ? "--daemon" : NULL,
 		"--log", LOG_FILE,
 		NULL
@@ -186,19 +186,13 @@ vpn_delete_logfile(struct vpn *vpn)
 int
 vpn_delete_pidfile(struct vpn *vpn)
 {
-	char *path = xmalloc(strlen(vpn->path) + strlen(PID_FILE) + 2);
-
-	sprintf(path, "%s/%s", vpn->path, PID_FILE);
-
-	if (unlink(path) == -1) {
+	if (unlink(vpn->pid_file) == -1) {
 		switch (errno) {
 		default:
-			fprintf(stderr, "Error trying to remove file '%s': %s\n", path, strerror(errno));
+			fprintf(stderr, "Error trying to remove file '%s': %s\n", vpn->pid_file, strerror(errno));
 			break;
 		}
 	}
-
-	free(path);
 
 	return 0;
 }
@@ -246,6 +240,10 @@ vpn_init(struct vpn *vpn, const char *folder, const char *name)
 
 	config = xmalloc(strlen(path) + 1 + strlen(wcard.gl_pathv[0]) + 1);
 	sprintf(config, "%s/%s", path, wcard.gl_pathv[0]);
+
+	vpn->pid_file	= xmalloc(strlen(name) + strlen(PID_PREFIX) + strlen(PID_SUFFIX) + 2);
+
+	sprintf(vpn->pid_file, "%s/%s%s", PID_PREFIX, name, PID_SUFFIX);
 
 	globfree(&wcard);
 

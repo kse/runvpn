@@ -5,7 +5,8 @@
 #define PURPLE        "\e[0;35m"
 #define BLUE_GRAY     "\e[40;1;34m"
 
-#define PID_FILE      "openvpn.pid"
+#define PID_PREFIX	  "/var/run"
+#define PID_SUFFIX	  ".runvpn.pid"
 #define LOG_FILE      "openvpn.log"
 #define CONF_PATTERN  "*.conf"
 
@@ -25,6 +26,7 @@ struct vpn {
 	char            *path;
 	char            *config;
 	char            *log;
+	char			*pid_file;
 	enum vpn_status status;
 	int             pid;
 	struct vpn      *next;
