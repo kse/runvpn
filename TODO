@@ -9,3 +9,7 @@
 * Only print colours if the terminal can handle it.
 
 * Update the damned readme file!
+
+* Change PID directory to somewhere only root can write.
+
+* Fix it so you can have folders that are similar when searching case insensitive
