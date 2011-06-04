@@ -37,7 +37,7 @@ int vpn_init(struct vpn *vpn, const char *folder, const char *name);
 enum vpn_status vpn_status(struct vpn *vpn);
 int vpn_start(struct vpn *vpn, int daemon);
 int vpn_stop(struct vpn *vpn);
-void vpn_reload(struct vpn *vpn);
+int vpn_reload(struct vpn *vpn);
 void vpn_dumplog(struct vpn *vpn);
 int vpn_delete_pidfile(struct vpn *vpn);
 

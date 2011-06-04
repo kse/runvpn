@@ -101,10 +101,9 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		if (vpn_status(&vpn) == VPN_ERROR)
+		if (vpn_status(&vpn) == VPN_ERROR ||
+				vpn_start(&vpn, NO_DAEMON))
 			return EXIT_FAILURE;
-
-		vpn_start(&vpn, NO_DAEMON);
 
 	} else if (argc == 3) {
 		struct vpn vpn;
@@ -121,17 +120,20 @@ main(int argc, char *argv[])
 
 		/* Do different things depending on 2nd argument pased. */
 		if (strcmp(argument, "stop") == 0) {
-			vpn_stop(&vpn);
+			if (vpn_stop(&vpn))
+				return EXIT_FAILURE;
 		} else if (strcmp(argument, "reload") == 0) {
-			vpn_reload(&vpn);
+			if (vpn_reload(&vpn))
+				return EXIT_FAILURE;
 		} else if (strcmp(argument, "daemon") == 0) {
-			vpn_start(&vpn, DAEMON);
+			if (vpn_start(&vpn, DAEMON))
+				return EXIT_FAILURE;
 		} else if (strcmp(argument, "drestart") == 0) {
-			vpn_stop(&vpn);
-			vpn_start(&vpn, DAEMON);
+			if (vpn_stop(&vpn) || vpn_start(&vpn, DAEMON))
+				return EXIT_FAILURE;
 		} else if (strcmp(argument, "restart") == 0) {
-			vpn_stop(&vpn);
-			vpn_start(&vpn, NO_DAEMON);
+			if (vpn_stop(&vpn) || vpn_start(&vpn, NO_DAEMON))
+				return EXIT_FAILURE;
 		} else if (strcmp(argument, "log") == 0) {
 			vpn_dumplog(&vpn);
 		} else {

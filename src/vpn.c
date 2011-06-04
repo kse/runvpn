@@ -93,13 +93,9 @@ vpn_start(struct vpn *vpn, int as_daemon)
 		NULL
 	};
 
-	switch (vpn->status) {
-	case VPN_RUNNING:
+	if (vpn->status == VPN_RUNNING) {
 		log_error("VPN %s is already running", vpn->name);
-		exit(EXIT_FAILURE);
-
-	default:
-		break;
+		return -1;
 	}
 
 	printf("Starting VPN %s\n", vpn->name);
@@ -107,7 +103,7 @@ vpn_start(struct vpn *vpn, int as_daemon)
 	if (execv("/usr/sbin/openvpn", argv)) {
 		log_error("Error executing /usr/sbin/openvpn: %s",
 		          strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	return 0;
@@ -122,45 +118,63 @@ vpn_stop(struct vpn *vpn)
 		return -1;
 	}
 
-	switch (kill(vpn->pid, 15)) {
-	case EPERM:
-		log_error("You don't have permission to kill pid %i", vpn->pid);
-		exit(EXIT_FAILURE);
+	if (kill(vpn->pid, 15)) {
+		switch (errno) {
+		case EPERM:
+			log_error("You don't have permission to kill pid %i",
+			          vpn->pid);
+			break;
 
-	case ESRCH:
-		log_error("No such process %i", vpn->pid);
-		break;
+		case ESRCH:
+			log_error("No such process %i", vpn->pid);
+			break;
 
-	default:
-		print_color("VPN stopped successfully", GREEN);
-		vpn->status = VPN_DEAD;
+		default:
+			log_error("Error killing pid %d: %s",
+			          vpn->pid, strerror(errno));
+			break;
+		}
+		return -1;
 	}
+
+	print_color("VPN stopped successfully", GREEN);
+        vpn->status = VPN_DEAD;
 
 	return 0;
 }
 
-void
+int
 vpn_reload(struct vpn *vpn)
 {
 	if (vpn->status != VPN_RUNNING) {
 		log_error("Error stopping VPN '%s', it is not currently running",
 		          vpn->name);
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
-	switch (kill(vpn->pid, 10)) {
-	case EPERM:
-		log_error("You don't have permission to send signals to pid %i",
-		          vpn->pid);
-		break;
+	if (kill(vpn->pid, 10)) {
+		switch (errno) {
+		case EPERM:
+			log_error("You don't have permission "
+			          "to send signals to pid %i", vpn->pid);
+			break;
 
-	case ESRCH:
-		log_error("Not such process %i", vpn->pid);
-		break;
+		case ESRCH:
+			log_error("Not such process %i", vpn->pid);
+			break;
 
-	default:
-		print_color("VPN reloaded successfully", GREEN);
+		default:
+			log_error("Error killing pid %d: %s",
+			          vpn->pid, strerror(errno));
+			break;
+		}
+
+		return -1;
 	}
+
+	print_color("VPN reloaded successfully", GREEN);
+
+	return 0;
 }
 
 void
