@@ -24,7 +24,6 @@ vpn_free(struct vpn *vpn)
     free(vpn->pid_file);
     free(vpn);
 }
->>>>>>> 46f1c704c7a4aacb0c84f55500b593cedb2bfd7d
 
 static void
 chomp(char *string)
