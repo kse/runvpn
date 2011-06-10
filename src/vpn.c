@@ -12,6 +12,17 @@
 
 #include "runvpn.h"
 
+void
+vpn_free(struct vpn *vpn)
+{
+    free(vpn->name);
+    free(vpn->path);
+    free(vpn->config);
+    free(vpn->log);
+    free(vpn->pid_file);
+    free(vpn);
+}
+
 static void
 chomp(char *string)
 {
