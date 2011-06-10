@@ -34,6 +34,7 @@ struct vpn {
 };
 
 int vpn_init(struct vpn *vpn, const char *folder, const char *name);
+void vpn_free(struct vpn *vpn);
 enum vpn_status vpn_status(struct vpn *vpn);
 int vpn_start(struct vpn *vpn, int daemon);
 int vpn_stop(struct vpn *vpn);

@@ -14,6 +14,18 @@
 
 #define log_error(fmt, ...) fprintf(stderr, fmt "\n", ##__VA_ARGS__)
 
+void
+vpn_free(struct vpn *vpn)
+{
+    free(vpn->name);
+    free(vpn->path);
+    free(vpn->config);
+    free(vpn->log);
+    free(vpn->pid_file);
+    free(vpn);
+}
+>>>>>>> 46f1c704c7a4aacb0c84f55500b593cedb2bfd7d
+
 static void
 chomp(char *string)
 {

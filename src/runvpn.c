@@ -105,6 +105,9 @@ main(int argc, char *argv[])
 				vpn_start(&vpn, NO_DAEMON))
 			return EXIT_FAILURE;
 
+		vpn_start(&vpn, NO_DAEMON);
+        vpn_free(&vpn);
+
 	} else if (argc == 3) {
 		struct vpn vpn;
 		char *name = *++argv;
@@ -139,6 +142,8 @@ main(int argc, char *argv[])
 		} else {
 			fprintf(stderr, "Unknown action '%s'\n", argument);
 		}
+
+        vpn_free(&vpn);
 	}
 
 	return EXIT_SUCCESS;
