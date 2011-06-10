@@ -11,3 +11,10 @@
 * Update the damned readme file!
 
 * Fix it so you can have folders that are similar when searching case insensitive
+
+* Check if the user is a member of the group 'runvpn'
+
+* Clear our data structures upon exit. Just for good measure.
+
+* Fix the indentation of overview
+    by indenting the size of the largest name(string)
