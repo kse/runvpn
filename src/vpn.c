@@ -22,7 +22,7 @@ vpn_free(struct vpn *vpn)
     free(vpn->config);
     free(vpn->log);
     free(vpn->pid_file);
-    free(vpn);
+    //free(vpn);
 }
 
 static void

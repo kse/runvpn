@@ -52,6 +52,7 @@ main(int argc, char *argv[])
 {
 	const char *root_folder = getenv("runvpn_root");
 	struct vpn *vpn = NULL;
+	struct vpn *prev = NULL;
 
 	if (root_folder == NULL) {
 		printf("Environment variable \"runvpn_root\" is not defined.\n");
@@ -62,7 +63,10 @@ main(int argc, char *argv[])
 		/* fprintf(stdout, "%30s%s%s\n", BLUE_GRAY, "Listing VPNS", RESET); */
 		puts("                    " BLUE_GRAY "Listing VPNS" RESET);
 
-		for (vpn = get_vpns(root_folder); vpn; vpn = vpn->next) {
+		vpn = get_vpns(root_folder);
+		while(vpn != NULL)
+		{
+			//for (vpn = get_vpns(root_folder); vpn; vpn = vpn->next) {
 			fprintf(stdout, "%25s - ", vpn->name);
 
 			switch (vpn_status(vpn)) {
@@ -91,6 +95,12 @@ main(int argc, char *argv[])
 				print_color("Unknown", RED);
 				break;
 			}
+			
+			prev = vpn;
+			vpn = prev->next;
+
+			vpn_free(prev);
+			free(prev);
 		}
 
 	} else if (argc == 2) {
