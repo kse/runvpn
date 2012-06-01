@@ -50,12 +50,12 @@ xstrdup(const char *str)
 int
 main(int argc, char *argv[])
 {
-	const char *root_folder = getenv("runvpn_root");
+	const char *root_folder = getenv("RUNVPN_ROOT");
 	struct vpn *vpn = NULL;
 	struct vpn *prev = NULL;
 
 	if (root_folder == NULL) {
-		printf("Environment variable \"runvpn_root\" is not defined.\n");
+		printf("Environment variable \"RUNVPN_ROOT\" is not defined.\n");
 		return EXIT_FAILURE;
 	}
 

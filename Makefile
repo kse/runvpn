@@ -1,5 +1,5 @@
 CC       = gcc
-CFLAGS  ?= -Wall -Wextra -O2 -pipe
+CFLAGS  ?= -Wall -Wextra -O3 -pipe
 OUTPUT   = runvpn
 
 INSTALL  = install
