@@ -23,6 +23,12 @@ clean:
 	rm -f runvpn
 	rm -f code/*.o
 
+pkgclean:
+	rm -rf src
+	rm -rf build
+	rm -rf pkg
+	rm -f runvpn-git*.pkg.tar.xz
+
 install:
 	$(INSTALL) -D -o root -g root -m 4555 --strip runvpn $(DESTDIR)$(BIN_DIR)
 	$(INSTALL) -D -o root -g root -m 0644 runvpn.bash_completion $(DESTDIR)$(BASH_COMPLETION_DIR)/runvpn
