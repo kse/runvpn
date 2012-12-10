@@ -6,7 +6,7 @@ INSTALL  = install
 PREFIX   = /usr
 BIN_DIR  = $(PREFIX)/bin
 BASH_COMPLETION_DIR = /etc/bash_completion.d
-OBJECT_FILES		= src/runvpn.o src/vpn.o
+OBJECT_FILES		= code/runvpn.o code/vpn.o
 
 program  = runvpn
 
@@ -20,7 +20,7 @@ runvpn: $(OBJECT_FILES)
 
 clean:
 	rm -f runvpn
-	rm -f src/*.o
+	rm -f code/*.o
 
 install:
 	$(INSTALL) -o root -g root -m 4555 --strip runvpn $(DESTDIR)$(BIN_DIR)
