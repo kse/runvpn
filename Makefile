@@ -5,7 +5,7 @@ OUTPUT   = runvpn
 DESTDIR ?= /
 INSTALL  = install
 PREFIX   = usr
-BIN_DIR  = $(PREFIX)/bin
+BIN_DIR  = $(PREFIX)/bin/
 BASH_COMPLETION_DIR = etc/bash_completion.d
 OBJECT_FILES		= code/runvpn.o code/vpn.o
 
