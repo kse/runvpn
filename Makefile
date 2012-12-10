@@ -5,7 +5,7 @@ OUTPUT   = runvpn
 DESTDIR ?= /
 INSTALL  = install
 PREFIX   = usr
-BIN_DIR  = $(PREFIX)/bin/
+BIN_DIR  = $(PREFIX)/bin
 BASH_COMPLETION_DIR = etc/bash_completion.d
 OBJECT_FILES		= code/runvpn.o code/vpn.o
 
@@ -20,7 +20,7 @@ runvpn: $(OBJECT_FILES)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f runvpn
+	rm -f $(OUTPUT)
 	rm -f code/*.o
 
 pkgclean:
@@ -30,5 +30,5 @@ pkgclean:
 	rm -f runvpn-git*.pkg.tar.xz
 
 install:
-	$(INSTALL) -D -o root -g root -m 4555 --strip runvpn $(DESTDIR)$(BIN_DIR)
-	$(INSTALL) -D -o root -g root -m 0644 runvpn.bash_completion $(DESTDIR)$(BASH_COMPLETION_DIR)/runvpn
+	$(INSTALL) -D -o root -g root -m 4555 --strip runvpn $(DESTDIR)$(BIN_DIR)/$(OUTPUT)
+	$(INSTALL) -D -o root -g root -m 0644 runvpn.bash_completion $(DESTDIR)$(BASH_COMPLETION_DIR)/$(OUTPUT)
