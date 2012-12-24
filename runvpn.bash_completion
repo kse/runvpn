@@ -1,18 +1,18 @@
 _runvpn()
 {
-    local cur prev folders opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    folders=`/bin/ls -1 /home/kse/OpenVPN/`
-    opts="start restart stop log daemon drestart"
+	local cur prev folders opts
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	folders=`/bin/ls -1 $RUNVPN_ROOT`
+	opts="start restart stop log daemon drestart"
 
-    if [[ ${COMP_CWORD} == 1 ]] ; then
-        COMPREPLY=( $(compgen -W "${folders}" -- ${cur}) )
-    elif [[ ${COMP_CWORD} == 2 ]] ; then
-        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    fi
+	if [[ ${COMP_CWORD} == 1 ]] ; then
+		COMPREPLY=( $(compgen -W "${folders}" -- ${cur}) )
+	elif [[ ${COMP_CWORD} == 2 ]] ; then
+		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+	fi
 
-    return 0
+			return 0
 }
 complete -F _runvpn runvpn

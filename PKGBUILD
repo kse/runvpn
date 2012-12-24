@@ -2,7 +2,7 @@
 
 pkgname=runvpn-git
 pkgrel=1
-pkgver=20121210
+pkgver=20121224
 arch=('x86_64' 'i686')
 license=('MIT')
 makedepends=('git')
